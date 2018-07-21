@@ -1,0 +1,42 @@
+{
+  "Records": [
+    {
+      "cf": {
+        "request": {
+          "headers": {
+            "host": [
+              {
+                "value": "d123.cf.net",
+                "key": "Host"
+              }
+            ],
+            "user-name": [
+              {
+                "value": "aws-cloudfront",
+                "key": "User-Name"
+              }
+            ],
+            "user-agent": [
+              {
+                "value": "Test Agent",
+                "key": "User-Agent"
+              }
+            ],
+            "cookie": [
+              {
+                "key": "cookie",
+                "value": "monolith-session=1234"
+              }
+            ]
+          },
+          "clientIp": "2001:cdba::3257:9652",
+          "uri": "/not-found.htl",
+          "method": "GET"
+        },
+        "config": {
+          "distributionId": "EXAMPLE"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,161 @@
+AWSTemplateFormatVersion : '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+  HyperdriveCore:
+    Type: String
+    Default: HyperdriveCoreTest
+  UserPoolId:
+    Type: String
+  ProtectedDomainName:
+    Type: String
+Description: An example API written in Golang
+Resources:
+  MonolithUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      GenerateSecret: true
+      RefreshTokenValidity: 1
+      UserPoolId: !Ref UserPoolId
+  MonolithUserPoolClientSettings:
+    Type: Custom::UserPoolClientSettings
+    Properties:
+      ServiceToken:
+        Fn::ImportValue: !Sub ${HyperdriveCore}-CognitoClientSettings
+      AllowedOAuthFlows:
+      - code
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthScopes:
+      - openid
+      - email
+      - aws.cognito.signin.user.admin
+      CallbackURLs:
+      - !Sub "https://auth.${ProtectedDomainName}/auth"
+      LogoutURLs:
+      - !Sub "https://auth.${ProtectedDomainName}/signout"
+      SupportedIdentityProviders:
+      - COGNITO
+      - Google
+      UserPoolId: !Ref UserPoolId
+      UserPoolClientId: !Ref MonolithUserPoolClient
+  MonolithFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: go1.x
+      Handler: main
+      Events:
+        Auth:
+          Type: Api
+          Properties:
+            Path: /auth
+            Method: get
+        Signin:
+          Type: Api
+          Properties:
+            Path: /signin
+            Method: get
+        Signout:
+          Type: Api
+          Properties:
+            Path: /signout
+            Method: get
+      Policies:
+      - Version: "2012-10-17"
+        Statement:
+        - Effect: Allow
+          Action:
+          - "cognito-idp:DescribeUserPool"
+          - "cognito-idp:DescribeUserPoolClient"
+          Resource:
+          - Fn::Sub: "arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}"
+        - Effect: Allow
+          Action:
+          - "dynamodb:BatchGetItem"
+          - "dynamodb:BatchWriteItem"
+          - "dynamodb:PutItem"
+          - "dynamodb:DescribeTable"
+          - "dynamodb:DeleteItem"
+          - "dynamodb:GetItem"
+          - "dynamodb:Scan"
+          - "dynamodb:Query"
+          - "dynamodb:UpdateItem"
+          Resource:
+          - Fn::Sub: "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${MonolithDynamoDbTable}"
+      CodeUri: .
+      Environment:
+        Variables:
+          DDB_TABLE_NAME: !Ref MonolithDynamoDbTable
+          USER_POOL_ID: !Ref UserPoolId
+          APP_CLIENT_ID: !Ref MonolithUserPoolClient
+          SUCCESS_REDIRECT: !Sub "https://${ProtectedDomainName}"
+          AUTH_DOMAIN_NAME: !Sub "auth.${ProtectedDomainName}"
+          PROTECTED_DOMAIN_NAME: !Ref ProtectedDomainName
+  MonolithDynamoDbTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey:
+          Name: sessionid
+          Type: String
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      SSESpecification:
+        SSEEnabled: true
+  MonolithLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub:
+        - "/aws/lambda/${LambdaName}"
+        - LambdaName: !Ref MonolithFunction
+      RetentionInDays: 90
+  MonolithCertificate:
+    Type: Custom::DnsCertificate
+    Properties:
+      ServiceToken:
+        Fn::ImportValue: !Sub "${HyperdriveCore}-DnsCertificate"
+      DomainName: !Sub "auth.${ProtectedDomainName}"
+      Region: us-east-1
+  MonolithCertificateRecordSetGroup:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneId: Z3KQMBKIBWAQXV
+      RecordSets:
+      - Name:
+          Fn::GetAtt:
+          - MonolithCertificate
+          - "auth.test3-hyperdrive.first-impact.io-RecordName"
+        ResourceRecords:
+        - Fn::GetAtt:
+          - MonolithCertificate
+          - "auth.test3-hyperdrive.first-impact.io-RecordValue"
+        TTL: 300
+        Type: CNAME
+      - Name: !Sub "auth.${ProtectedDomainName}"
+        ResourceRecords:
+        - "0 issue \"amazon.com\""
+        TTL: 300
+        Type: CAA
+  MonolithDomainName:
+    Type: AWS::ApiGateway::DomainName
+    Properties:
+      CertificateArn: !Ref MonolithCertificate
+      DomainName: !Sub "auth.${ProtectedDomainName}"
+      EndpointConfiguration:
+        Types:
+        - EDGE
+  MonolithBasePath:
+    Type: "AWS::ApiGateway::BasePathMapping"
+    Properties:
+      DomainName: !Ref MonolithDomainName
+      RestApiId: !Ref ServerlessRestApi
+      Stage: !Ref ServerlessRestApiProdStage
+  MonolithRecortSetGroup:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneId: Z3KQMBKIBWAQXV
+      RecordSets:
+      - Name: !Sub "auth.${ProtectedDomainName}"
+        Type: A
+        AliasTarget:
+          DNSName: !GetAtt MonolithDomainName.DistributionDomainName
+          HostedZoneId: Z2FDTNDATAQYW2

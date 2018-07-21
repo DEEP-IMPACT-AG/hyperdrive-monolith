@@ -1,0 +1,9 @@
+{
+  "name": "cf_auth",
+  "version": "1.0.0",
+  "description": "cf auth sample",
+  "main": "app.js",
+  "repository": "https://github.com/DEEP-IMPACT-AG",
+  "author": "SAM CLI",
+  "license": "MIT"
+}
