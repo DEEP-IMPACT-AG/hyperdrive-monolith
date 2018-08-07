@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: A template example for a manual app.
+Parameters:
+  HyperdriveCore:
+    Type: String
+    Default: HyperdriveCoreTest
+  Domain:
+    Type: String
+  LoadBalancerStack:
+    Type: String
+  UserPoolStack:
+    Type: String
+Resources:
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      GenerateSecret: true
+      RefreshTokenValidity: 1
+      UserPoolId: !Ref UserPoolId
+  UserPoolClientSettings:
+    Type: Custom::UserPoolClientSettings
+    Properties:
+      ServiceToken:
+        Fn::ImportValue: !Sub ${HyperdriveCore}-CognitoClientSettings
+      AllowedOAuthFlows:
+      - code
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthScopes:
+      - openid
+      - email
+      - aws.cognito.signin.user.admin
+      CallbackURLs:
+      - !Sub "https://DNS/oauth2/idpresponse"
+      - !Sub "https://CNAME/oauth2/idpresponse"
+      SupportedIdentityProviders:
+      - COGNITO
+      - Google
+      UserPoolId: !Ref UserPoolId
+      UserPoolClientId: !Ref UserPoolClient
+  ManualAppSettings:
+    Type: Custom::ManualAppSettings
+    Properties:
+      ServiceToken:
+        Fn::ImportValue: !Sub ${HyperdriveCore}-ManualAppSettings
+      UserPoolId: !Ref UserPoolId
+      UserPoolClientId: !Ref UserPoolClient
+      Domains:
+      - "deep-impact.ch"
+      Emails:
+      - "stan@hood.ch"

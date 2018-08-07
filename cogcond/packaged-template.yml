@@ -1,0 +1,70 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: A trigger function for cognito pools to restrict signin/auth.
+Outputs:
+  FunctionArn:
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-FunctionArn
+    Value:
+      Fn::GetAtt:
+      - Function
+      - Arn
+  TableArn:
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-TableArn
+    Value:
+      Fn::GetAtt:
+      - Table
+      - Arn
+Parameters:
+  HyperdriveCore:
+    Default: HyperdriveCoreTest
+    Type: String
+Resources:
+  Function:
+    Properties:
+      CodeUri: s3://lambdacfartifacts-artifactbucket-10yx1c4johw49/lambda/0fe857a10dacfbf710aa381072a3101c
+      Environment:
+        Variables:
+          DDB_TABLE_NAME:
+            Ref: Table
+      Handler: main
+      Policies:
+      - Statement:
+        - Action:
+          - dynamodb:GetItem
+          Effect: Allow
+          Resource:
+          - Fn::Sub: arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Table}
+        Version: '2012-10-17'
+      Runtime: go1.x
+    Type: AWS::Serverless::Function
+  Logs:
+    Properties:
+      LogGroupName:
+        Fn::Sub:
+        - /aws/lambda/${LambdaName}
+        - LambdaName:
+            Ref: Function
+      RetentionInDays: 90
+    Type: AWS::Logs::LogGroup
+  Table:
+    Properties:
+      AttributeDefinitions:
+      - AttributeName: userPoolId
+        AttributeType: S
+      - AttributeName: clientId
+        AttributeType: S
+      KeySchema:
+      - AttributeName: userPoolId
+        KeyType: HASH
+      - AttributeName: clientId
+        KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      SSESpecification:
+        SSEEnabled: true
+    Type: AWS::DynamoDB::Table
+Transform: AWS::Serverless-2016-10-31

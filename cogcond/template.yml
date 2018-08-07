@@ -1,0 +1,35 @@
+AWSTemplateFormatVersion : '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+  HyperdriveCore:
+    Type: String
+    Default: HyperdriveCoreTest
+Description: A trigger function for cognito pools to restrict signin/auth.
+Resources:
+  Function:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: go1.x
+      Handler: main
+      Policies:
+      - Version: "2012-10-17"
+        Statement:
+        - Effect: Allow
+          Action:
+          - "dynamodb:GetItem"
+          Resource:
+          - Fn::Sub: "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Table}"
+      CodeUri: ./build
+  Logs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub:
+        - "/aws/lambda/${LambdaName}"
+        - LambdaName: !Ref Function
+      RetentionInDays: 90
+Outputs:
+  FunctionArn:
+    Value: !GetAtt Function.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-FunctionArn"

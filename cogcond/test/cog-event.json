@@ -1,0 +1,11 @@
+{
+  "userPoolId": "user_pool_id",
+  "callerContext": {"clientId": "client_id"},
+  "request": {
+    "userAttributes": {
+      "email": "stan@deep-impact.ch",
+      "phone_number": "+12065550100"
+    }
+  },
+  "response": {}
+}

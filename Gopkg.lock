@@ -10,9 +10,10 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:6c8d51660e50d38116fe8c29eefc00ce856300329993980f7ce7333a522a6a99"
+  digest = "1:6b464e9339238d5bf66d472c9a8a3134072b4bdcf78f51015061cd46b26ce939"
   name = "github.com/aws/aws-lambda-go"
   packages = [
+    "cfn",
     "events",
     "lambda",
     "lambda/messages",
@@ -23,7 +24,7 @@
   version = "v1.2.0"
 
 [[projects]]
-  digest = "1:ecc6f579320f119eb3d15e2ea7d7607ecf5a00c0a92e02f6fa0e757c4ece8da2"
+  digest = "1:1090e5cc7a48a2ea37e20f540e37e083fd235d8b62b6c66f4171d4c180e65e35"
   name = "github.com/aws/aws-sdk-go-v2"
   packages = [
     "aws",
@@ -47,6 +48,7 @@
     "private/protocol/xml/xmlutil",
     "service/cognitoidentityprovider",
     "service/dynamodb",
+    "service/ssm",
     "service/sts",
   ]
   pruneopts = "UT"
@@ -143,9 +145,13 @@
   analyzer-version = 1
   input-imports = [
     "github.com/apex/gateway",
+    "github.com/aws/aws-lambda-go/cfn",
+    "github.com/aws/aws-lambda-go/events",
+    "github.com/aws/aws-lambda-go/lambda",
     "github.com/aws/aws-sdk-go-v2/aws/external",
     "github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider",
     "github.com/aws/aws-sdk-go-v2/service/dynamodb",
+    "github.com/aws/aws-sdk-go-v2/service/ssm",
     "github.com/gobuffalo/packr",
     "github.com/google/uuid",
     "github.com/pkg/errors",
